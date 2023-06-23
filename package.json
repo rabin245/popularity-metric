@@ -1,0 +1,9 @@
+{
+  "name": "popularity-metric",
+  "version": "1.0.0",
+  "description": "calculte the popularity of an item using ceratin metrics like clicks, shares, etc.",
+  "main": "index.js",
+  "repository": "https://github.com/rabin245/popularity-metric",
+  "author": "rabin245",
+  "license": "MIT"
+}
