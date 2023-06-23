@@ -1,20 +1,5 @@
-const example_EVENT_TYPES = {
-  NUM_OF_REVIEW: "num_of_review",
-  AVERAGE_RATING: "average_rating",
-  PROFILE_VIEWS: "profile_views",
-  FAVORITES: "favorites",
-  SHARE_LINK: "share_link",
-  SHARE_EMAIL: "share_email",
-  SHARE_FACEBOOK: "share_facebook",
-  SHARE_TWITTER: "share_twitter",
-  SHARE_INSTAGRAM: "share_instagram",
-  SHARE_WHATSAPP: "share_whatsapp",
-  SHARE_VIBER: "share_viber",
-  CALL: "call",
-};
-
 // Weight of each metric/key (sum of all weights should be 1)
-const example_weight = {
+const example_eventWeights = {
   num_of_review: 0.2,
   average_rating: 0.25,
   profile_views: 0.05,
@@ -29,7 +14,7 @@ const example_weight = {
   call: 0.05,
 };
 
-let weights = {};
+let eventWeights = {};
 
 // Event values for each provider
 const global_store = {
@@ -39,12 +24,12 @@ const global_store = {
     profile_views: 100,
     favorites: 5,
     share_link: 2,
-    share_email: 0,
+    share_email: 10,
     share_facebook: 2,
     share_twitter: 9,
     share_instagram: 7,
-    share_whatsapp: 0,
-    share_viber: 0,
+    share_whatsapp: 1,
+    share_viber: 3,
     call: 5,
   },
   provider_2: {
@@ -61,17 +46,51 @@ const global_store = {
     share_viber: 0,
     call: 2,
   },
+  provider_3: {
+    num_of_review: 5,
+    average_rating: 3.5,
+    profile_views: 50,
+    favorites: 2,
+    share_link: 1,
+    share_email: 0,
+    share_facebook: 2,
+    share_twitter: 9,
+    share_instagram: 7,
+    share_whatsapp: 0,
+    share_viber: 0,
+    call: 1,
+  },
+  provider_4: {
+    num_of_review: 10,
+    average_rating: 4.5,
+    profile_views: 10,
+    favorites: 100,
+    share_link: 20,
+    share_email: 10,
+    share_facebook: 50,
+    share_twitter: 5,
+    share_instagram: 10,
+    share_whatsapp: 100,
+    share_viber: 80,
+    call: 50,
+  },
 };
 
-const addToStore = (key, eventType, value) => {
+// todo: use localstorage to save the data for now
+const addToStore = (key, eventType) => {
   if (global_store[key][eventType] === undefined) {
     global_store[key][eventType] = 0;
   }
-  global_store[key][eventType] += value;
+  global_store[key][eventType] += 1;
 };
 
+// todo: use localstorage to save the data for now
+function getValueFromStore() {
+  return global_store;
+}
+
 function trackEvent(eventType, provider) {
-  addToStore(provider, eventType, weights[eventType]);
+  addToStore(provider, eventType);
 }
 
 function getStoreByPopularity() {
@@ -83,23 +102,39 @@ function getStoreByPopularity() {
   return sortedObj;
 }
 
-function getValueFromStore() {
-  return global_store;
-}
-
-function calculateWeightedAverage(counts) {
+function calculateWeightedAverage(eventCounts) {
   //Convert object to array
-  const arr = Object.entries(counts);
-  //Loop through array and calculate for each key
-  const sum = arr.map((value) => {
-    const [key, valueObj] = value;
-    // Loop through each object and calculate weighted average
-    const sum = Object.entries(valueObj).reduce((acc, [key, value]) => {
-      return acc + value * weights[key];
-    }, 0);
-    return [key, sum];
+  const arr = Object.entries(eventCounts);
+
+  // get total sum of weights of registered events
+  const totalWeight = Object.values(example_eventWeights).reduce(
+    (acc, value) => acc + value,
+    0
+  );
+
+  //Loop through array and calculate weightedAverage for each key
+  const weightedAverages = arr.map((value) => {
+    const [providerKey, weightObj] = value;
+    // console.log("weightObj", weightObj);
+    console.log(example_eventWeights);
+
+    const weightedSum = Object.entries(weightObj).reduce(
+      (acc, [event, count]) => {
+        console.log("event", event);
+        console.log("eventWeight", example_eventWeights[event]);
+        return acc + count * example_eventWeights[event];
+      },
+      0
+    );
+
+    const averageSum = weightedSum / totalWeight;
+    console.log("averageSum", averageSum);
+
+    return [providerKey, averageSum];
   });
-  return sum;
+
+  console.log("weightedAverages", weightedAverages);
+  return weightedAverages;
 }
 
 function mergeSort(arr) {
@@ -132,8 +167,8 @@ function merge(left, right) {
   return merged.concat(left.slice(i)).concat(right.slice(j));
 }
 
-function registerEventsAndWeights(data) {
-  weights[data.eventType] = data.weight;
+function registerEventsAndWeights(eventType, weight) {
+  eventWeights[eventType] = weight;
 }
 
 getStoreByPopularity();
@@ -141,6 +176,5 @@ getStoreByPopularity();
 module.exports = {
   trackEvent,
   getStoreByPopularity,
-  EVENT_TYPES,
   registerEventsAndWeights,
 };
