@@ -62,13 +62,6 @@ function trackEvent(eventType, provider, count) {
   addToStore(provider, eventType, count);
 }
 
-function getStoreByPopularity() {
-  const providerEventsData = getValueFromStore();
-  const weightedArr = calculateWeightedAverage(providerEventsData);
-  const sortedArr = mergeSort(weightedArr);
-  return sortedArr;
-}
-
 function calculateWeightedAverage(eventCounts) {
   //Convert object to array
   const arr = Object.entries(eventCounts);
@@ -132,9 +125,11 @@ function registerEventsAndWeights(eventType, weight) {
   eventWeights[eventType] = weight;
 }
 
-export {
-  trackEvent,
-  registerEventsAndWeights,
-  getStoreByPopularity,
-  eventWeights,
-};
+function getStoreByPopularity() {
+  const providerEventsData = getValueFromStore();
+  const weightedArr = calculateWeightedAverage(providerEventsData);
+  const sortedArr = mergeSort(weightedArr);
+  return sortedArr;
+}
+
+export { trackEvent, registerEventsAndWeights, getStoreByPopularity };
