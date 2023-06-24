@@ -16,95 +16,46 @@ const example_eventWeights = {
 
 let eventWeights = {};
 
-// Event values for each provider
-const global_store = {};
-
-// todo: use localstorage to save the data for now
 const addToStore = (key, eventType, count) => {
-  if (global_store[key] === undefined) {
-    global_store[key] = {};
+  // Get the stored data from localStorage
+  let storedData = JSON.parse(localStorage.getItem("providersStore"));
+
+  if (!storedData) {
+    storedData = {};
   }
-  if (global_store[key][eventType] === undefined) {
-    global_store[key][eventType] = 0;
+
+  if (!storedData[key]) {
+    storedData[key] = {};
   }
-  global_store[key][eventType] += count;
-  console.log(global_store);
+
+  if (!storedData[key][eventType]) {
+    storedData[key][eventType] = 0;
+  }
+
+  storedData[key][eventType] += count;
+
+  // Save the updated data to localStorage
+  localStorage.setItem("providersStore", JSON.stringify(storedData));
 };
 
-// todo: use localstorage to save the data for now
 function getValueFromStore() {
-  // return {
-  //   provider_1: {
-  //     num_of_review: 10,
-  //     average_rating: 4.5,
-  //     profile_views: 100,
-  //     favorites: 5,
-  //     share_link: 2,
-  //     share_email: 10,
-  //     share_facebook: 2,
-  //     share_twitter: 9,
-  //     share_instagram: 7,
-  //     share_whatsapp: 1,
-  //     share_viber: 3,
-  //     call: 5,
-  //   },
-  //   provider_2: {
-  //     num_of_review: 8,
-  //     average_rating: 4,
-  //     profile_views: 121,
-  //     favorites: 8,
-  //     share_link: 3,
-  //     share_email: 0,
-  //     share_facebook: 2,
-  //     share_twitter: 9,
-  //     share_instagram: 7,
-  //     share_whatsapp: 0,
-  //     share_viber: 0,
-  //     call: 2,
-  //   },
-  //   provider_3: {
-  //     num_of_review: 5,
-  //     average_rating: 3.5,
-  //     profile_views: 50,
-  //     favorites: 2,
-  //     share_link: 1,
-  //     share_email: 0,
-  //     share_facebook: 2,
-  //     share_twitter: 9,
-  //     share_instagram: 7,
-  //     share_whatsapp: 0,
-  //     share_viber: 0,
-  //     call: 1,
-  //   },
-  //   provider_4: {
-  //     num_of_review: 10,
-  //     average_rating: 4.5,
-  //     profile_views: 10,
-  //     favorites: 100,
-  //     share_link: 20,
-  //     share_email: 10,
-  //     share_facebook: 50,
-  //     share_twitter: 5,
-  //     share_instagram: 10,
-  //     share_whatsapp: 100,
-  //     share_viber: 80,
-  //     call: 50,
-  //   },
-  // };
+  // Get the stored data from localStorage
+  const storedData = JSON.parse(localStorage.getItem("providersStore"));
 
   const eventTypes = Object.keys(eventWeights);
-  console.log(eventTypes);
 
-  Object.entries(global_store).forEach(([id, eventCountObj]) => {
-    eventTypes.forEach((event) => {
-      if (eventCountObj[event] === undefined) {
-        eventCountObj[event] = 0;
-      }
+  // Initialize missing event counts to 0
+  if (storedData) {
+    Object.values(storedData).forEach((eventCountObj) => {
+      eventTypes.forEach((event) => {
+        if (eventCountObj[event] === undefined) {
+          eventCountObj[event] = 0;
+        }
+      });
     });
-  });
+  }
 
-  console.log(global_store);
-  return global_store;
+  return storedData;
 }
 
 function trackEvent(eventType, provider, count) {
@@ -112,19 +63,15 @@ function trackEvent(eventType, provider, count) {
 }
 
 function getStoreByPopularity() {
-  const global_store = getValueFromStore();
-  const weightedArr = calculateWeightedAverage(global_store);
-  console.log(weightedArr, "weightedArr");
+  const providerEventsData = getValueFromStore();
+  const weightedArr = calculateWeightedAverage(providerEventsData);
   const sortedArr = mergeSort(weightedArr);
-  console.log(sortedArr, "sortedArr");
   return sortedArr;
 }
 
 function calculateWeightedAverage(eventCounts) {
-  console.log("starting here");
   //Convert object to array
   const arr = Object.entries(eventCounts);
-  console.log(arr);
 
   // get total sum of weights of registered events
   const totalWeight = Object.values(eventWeights).reduce(
@@ -132,31 +79,22 @@ function calculateWeightedAverage(eventCounts) {
     0
   );
 
-  console.log(totalWeight, "total weights");
-
   //Loop through array and calculate weightedAverage for each key
   const weightedAverages = arr.map((value) => {
     const [providerKey, weightObj] = value;
-    console.log("value", value);
-    console.log("eventWeights", eventWeights);
 
     const weightedSum = Object.entries(weightObj).reduce(
       (acc, [event, count]) => {
-        console.log("event", event, "count", count);
-        console.log("eventWeight", eventWeights[event]);
         return acc + count * eventWeights[event];
       },
       0
     );
-    console.log("weightedSum", weightedSum);
 
     const averageSum = weightedSum / totalWeight;
-    console.log("averageSum", averageSum);
 
     return [providerKey, averageSum];
   });
 
-  console.log("weightedAverages", weightedAverages);
   return weightedAverages;
 }
 
