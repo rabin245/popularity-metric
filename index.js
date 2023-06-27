@@ -14,6 +14,12 @@ const example_eventWeights = {
   call: 0.05,
 };
 
+// constants for tracking time on page
+const INTERVAL_TIME = 10000;
+const ONE_SECOND = 1000;
+// events to track if the user is idle in page
+const events = ["mouseup", "keydown", "scroll", "mousemove"];
+
 let eventWeights = {};
 
 const addToStore = (key, eventType, count) => {
@@ -121,8 +127,10 @@ function merge(left, right) {
   return merged.concat(left.slice(i)).concat(right.slice(j));
 }
 
-function registerEventsAndWeights(eventType, weight) {
-  eventWeights[eventType] = weight;
+function registerEventsAndWeights(eventsAndWeights) {
+  eventsAndWeights.forEach(([eventType, weight]) => {
+    eventWeights[eventType] = weight;
+  });
 }
 
 function getStoreByPopularity() {
@@ -132,4 +140,55 @@ function getStoreByPopularity() {
   return sortedArr;
 }
 
-export { trackEvent, registerEventsAndWeights, getStoreByPopularity };
+function trackTimeOnPages({ weight, patterns }) {
+  registerEventsAndWeights([["time_on_page", weight]]);
+  if (!patterns) throw new Error("Patterns not provided");
+
+  let startTime = Date.now();
+  let endTime = startTime + INTERVAL_TIME;
+
+  setInterval(() => {
+    const currentPath = window.location.pathname;
+    if (!document.hidden && startTime <= endTime) {
+      startTime = Date.now();
+      checkPathNameAndStoreTime(currentPath, patterns);
+    }
+  }, ONE_SECOND);
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      endTime = Date.now();
+    } else {
+      startTime = Date.now();
+      endTime = startTime + INTERVAL_TIME;
+    }
+  });
+
+  events.forEach((event) => {
+    document.addEventListener(event, () => {
+      endTime = startTime + INTERVAL_TIME;
+    });
+  });
+}
+
+function checkPathNameAndStoreTime(path, patterns) {
+  patterns.forEach((pattern) => {
+    const regex = new RegExp(pattern);
+    if (regex.test(path)) {
+      incrementTimeOnPath(path);
+    }
+  });
+}
+
+function incrementTimeOnPath(path) {
+  // assume path is like /provider/:id
+  const id = path.split("/")[2];
+  trackEvent("time_on_page", id, 1);
+}
+
+export {
+  trackEvent,
+  registerEventsAndWeights,
+  getStoreByPopularity,
+  trackTimeOnPages,
+};
