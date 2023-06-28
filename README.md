@@ -17,17 +17,6 @@ npm install @zaxiya/popularity-metric
 
 ## Usage
 
-### Tracking Events
-
-You can use the `trackEvent` function to track events and store their counts in localStorage. Here's an example:
-
-```javascript
-import { trackEvent } from "@zaxiya/popularity-metric";
-
-// Track an event
-trackEvent("num_of_review", "providerA", 1);
-```
-
 ### Registering Events and Weights
 
 You can register events and their corresponding weights using the `registerEventsAndWeights` function. Here's an example:
@@ -41,6 +30,17 @@ registerEventsAndWeights([
   ["average_rating", 0.25],
   // Add more events and weights
 ]);
+```
+
+### Tracking Events
+
+You can use the `trackEvent` function to track events and store their counts in localStorage. Here's an example:
+
+```javascript
+import { trackEvent } from "@zaxiya/popularity-metric";
+
+// Track an event
+trackEvent("num_of_review", "providerA", 1);
 ```
 
 ### Getting Store by Popularity
