@@ -164,6 +164,22 @@ function getStoreByPopularity() {
   return sortedArr;
 }
 
+function throttleFunc(func, interval) {
+  console.log("running throttle func");
+  let shouldFire = true;
+  return function () {
+    if (shouldFire) {
+      console.log("successful firing");
+      func();
+
+      shouldFire = false;
+      setTimeout(() => {
+        shouldFire = true;
+      }, interval);
+    }
+  };
+}
+
 function trackTimeOnPages({ weight, patterns }) {
   registerEventsAndWeights([["time_on_page", weight]]);
   if (!patterns) throw new Error("Patterns not provided");
@@ -193,7 +209,8 @@ function trackTimeOnPages({ weight, patterns }) {
   }
 
   events.forEach((event) => {
-    document.addEventListener(event, addTime);
+    const throttleAddTime = throttleFunc(addTime, 5000);
+    document.addEventListener(event, throttleAddTime);
   });
 }
 
