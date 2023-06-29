@@ -26,6 +26,7 @@ let lastEventTimestamps = {};
 const COOLDOWN_PERIOD = 5000;
 
 const addToStore = (key, eventType, count) => {
+  console.log("adding to store for key", key, "event type", eventType);
   // Get the stored data from localStorage
   let storedData = JSON.parse(localStorage.getItem("providersStore"));
 
@@ -67,30 +68,19 @@ function getValueFromStore() {
   return storedData;
 }
 
-function isEventOnCooldown(provider, eventType) {
-  if (lastEventTimestamps[provider] === undefined) {
-    lastEventTimestamps[provider] = {};
-  }
-  if (!lastEventTimestamps[provider][eventType]) {
-    lastEventTimestamps[provider][eventType] = 0;
-  }
-
-  const currentTime = Date.now();
-  const timeSinceLastEvent =
-    currentTime - lastEventTimestamps[provider][eventType];
-
-  return timeSinceLastEvent < COOLDOWN_PERIOD;
+function debounce(callback, delay = 1000) {
+  let time;
+  return (...args) => {
+    clearTimeout(time);
+    time = setTimeout(() => {
+      callback(...args);
+    }, delay);
+  };
 }
 
-function trackEvent(eventType, provider, count) {
-  if (isEventOnCooldown(provider, eventType)) {
-    console.log("Event ", eventType, "is on cooldown for provider", provider);
-    return;
-  }
-  console.log("event is not on cooldown adding to store");
+const trackEvent = debounce((eventType, provider, count) => {
   addToStore(provider, eventType, count);
-  lastEventTimestamps[provider][eventType] = Date.now();
-}
+}, 5000);
 
 function calculateWeightedAverage(eventCounts) {
   //Convert object to array
@@ -163,20 +153,17 @@ function getStoreByPopularity() {
   const sortedArr = mergeSort(weightedArr);
   return sortedArr;
 }
+function throttle(callback, delay = 1000) {
+  let shouldWait = false;
 
-function throttleFunc(func, interval) {
-  console.log("running throttle func");
-  let shouldFire = true;
-  return function () {
-    if (shouldFire) {
-      console.log("successful firing");
-      func();
+  return (...args) => {
+    if (shouldWait) return;
 
-      shouldFire = false;
-      setTimeout(() => {
-        shouldFire = true;
-      }, interval);
-    }
+    callback(...args);
+    shouldWait = true;
+    setTimeout(() => {
+      shouldWait = false;
+    }, delay);
   };
 }
 
@@ -209,7 +196,7 @@ function trackTimeOnPages({ weight, patterns }) {
   }
 
   events.forEach((event) => {
-    const throttleAddTime = throttleFunc(addTime, 5000);
+    const throttleAddTime = throttle(addTime, 5000);
     document.addEventListener(event, throttleAddTime);
   });
 }
