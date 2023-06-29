@@ -22,6 +22,9 @@ const events = ["mouseup", "keydown", "scroll", "mousemove"];
 
 let eventWeights = {};
 
+let lastEventTimestamps = {};
+const COOLDOWN_PERIOD = 5000;
+
 const addToStore = (key, eventType, count) => {
   // Get the stored data from localStorage
   let storedData = JSON.parse(localStorage.getItem("providersStore"));
@@ -64,8 +67,29 @@ function getValueFromStore() {
   return storedData;
 }
 
+function isEventOnCooldown(provider, eventType) {
+  if (lastEventTimestamps[provider] === undefined) {
+    lastEventTimestamps[provider] = {};
+  }
+  if (!lastEventTimestamps[provider][eventType]) {
+    lastEventTimestamps[provider][eventType] = 0;
+  }
+
+  const currentTime = Date.now();
+  const timeSinceLastEvent =
+    currentTime - lastEventTimestamps[provider][eventType];
+
+  return timeSinceLastEvent < COOLDOWN_PERIOD;
+}
+
 function trackEvent(eventType, provider, count) {
+  if (isEventOnCooldown(provider, eventType)) {
+    console.log("Event ", eventType, "is on cooldown for provider", provider);
+    return;
+  }
+  console.log("event is not on cooldown adding to store");
   addToStore(provider, eventType, count);
+  lastEventTimestamps[provider][eventType] = Date.now();
 }
 
 function calculateWeightedAverage(eventCounts) {
@@ -137,7 +161,6 @@ function getStoreByPopularity() {
   const providerEventsData = getValueFromStore();
   const weightedArr = calculateWeightedAverage(providerEventsData);
   const sortedArr = mergeSort(weightedArr);
-  console.log(sortedArr);
   return sortedArr;
 }
 
@@ -186,7 +209,7 @@ function checkPathNameAndStoreTime(path, patterns) {
 function incrementTimeOnPath(path) {
   // assume path is like /provider/:id
   const id = path.split("/")[2];
-  trackEvent("time_on_page", id, 1);
+  // trackEvent("time_on_page", id, 1);
 }
 
 export {
