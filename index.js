@@ -137,6 +137,7 @@ function getStoreByPopularity() {
   const providerEventsData = getValueFromStore();
   const weightedArr = calculateWeightedAverage(providerEventsData);
   const sortedArr = mergeSort(weightedArr);
+  console.log(sortedArr);
   return sortedArr;
 }
 
@@ -164,10 +165,12 @@ function trackTimeOnPages({ weight, patterns }) {
     }
   });
 
+  function addTime() {
+    endTime = startTime + INTERVAL_TIME;
+  }
+
   events.forEach((event) => {
-    document.addEventListener(event, () => {
-      endTime = startTime + INTERVAL_TIME;
-    });
+    document.addEventListener(event, addTime);
   });
 }
 
