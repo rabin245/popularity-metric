@@ -68,6 +68,8 @@ function getValueFromStore() {
   return storedData;
 }
 
+const debounceByEventType = {};
+
 function debounce(callback, delay = 1000) {
   let time;
   return (...args) => {
@@ -78,9 +80,15 @@ function debounce(callback, delay = 1000) {
   };
 }
 
-const trackEvent = debounce((eventType, provider, count) => {
-  addToStore(provider, eventType, count);
-}, 5000);
+const trackEvent = (eventType, provider, count) => {
+  if (!debounceByEventType[eventType]) {
+    debounceByEventType[eventType] = debounce((eventType, provider, count) => {
+      addToStore(provider, eventType, count);
+    }, 5000);
+  }
+
+  debounceByEventType[eventType](eventType, provider, count);
+};
 
 function calculateWeightedAverage(eventCounts) {
   //Convert object to array
@@ -153,6 +161,7 @@ function getStoreByPopularity() {
   const sortedArr = mergeSort(weightedArr);
   return sortedArr;
 }
+
 function throttle(callback, delay = 1000) {
   let shouldWait = false;
 
@@ -180,7 +189,7 @@ function trackTimeOnPages({ weight, patterns }) {
       startTime = Date.now();
       checkPathNameAndStoreTime(currentPath, patterns);
     }
-  }, ONE_SECOND);
+  }, 2000);
 
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
@@ -196,7 +205,7 @@ function trackTimeOnPages({ weight, patterns }) {
   }
 
   events.forEach((event) => {
-    const throttleAddTime = throttle(addTime, 5000);
+    const throttleAddTime = throttle(addTime, 2000);
     document.addEventListener(event, throttleAddTime);
   });
 }
@@ -213,7 +222,7 @@ function checkPathNameAndStoreTime(path, patterns) {
 function incrementTimeOnPath(path) {
   // assume path is like /provider/:id
   const id = path.split("/")[2];
-  // trackEvent("time_on_page", id, 1);
+  addToStore(id, "time_on_page", 2);
 }
 
 export {
