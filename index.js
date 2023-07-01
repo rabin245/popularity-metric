@@ -189,7 +189,7 @@ function trackTimeOnPages({ weight, patterns }) {
       startTime = Date.now();
       checkPathNameAndStoreTime(currentPath, patterns);
     }
-  }, 2000);
+  }, 5000);
 
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
@@ -205,24 +205,25 @@ function trackTimeOnPages({ weight, patterns }) {
   }
 
   events.forEach((event) => {
-    const throttleAddTime = throttle(addTime, 2000);
+    const throttleAddTime = throttle(addTime, 4000);
     document.addEventListener(event, throttleAddTime);
   });
 }
 
 function checkPathNameAndStoreTime(path, patterns) {
-  patterns.forEach((pattern) => {
+  patterns.forEach(({ pattern, splitPosition = 2 }) => {
     const regex = new RegExp(pattern);
     if (regex.test(path)) {
-      incrementTimeOnPath(path);
+      incrementTimeOnPath(path, splitPosition);
+      return;
     }
   });
 }
 
-function incrementTimeOnPath(path) {
+function incrementTimeOnPath(path, splitPosition) {
   // assume path is like /provider/:id
-  const id = path.split("/")[2];
-  addToStore(id, "time_on_page", 2);
+  const id = path.split("/")[splitPosition];
+  addToStore(id, "time_on_page", 5);
 }
 
 export {
