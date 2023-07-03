@@ -1,3 +1,5 @@
+import { addToStore } from "./store";
+
 export function checkPathNameAndStoreTime(path, patterns) {
   patterns.forEach(({ pattern, splitPosition = 2 }) => {
     const regex = new RegExp(pattern);
