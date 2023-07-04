@@ -57,7 +57,7 @@ console.log(storeByPopularity);
 
 ### Tracking Time on Pages
 
-You can track the time spent on specific pages using the trackTimeOnPages function. It allows you to define patterns for page URLs and tracks the time spent on matching pages. Here's an example:
+You can track the time spent on specific pages using the `trackTimeOnPages` function. It allows you to define patterns for page URLs and tracks the time spent on matching pages. Here's an example:
 
 ```javascript
 import { trackTimeOnPages } from "@zaxiya/popularity-metric";
