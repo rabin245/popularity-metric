@@ -2,12 +2,7 @@ import debounce from "./debounce";
 import throttle from "./throttle";
 import * as store from "./store";
 import * as weightedAverage from "./weightedAverage";
-import {
-  setupHistoryListener,
-  isUserActive,
-  updateEndTime,
-  incrementTimeOnPage,
-} from "./utils";
+import { isUserActive, updateEndTime } from "./utils";
 
 // constants for tracking time on page
 const INTERVAL_TIME = 10000;
@@ -35,6 +30,7 @@ const trackEvent = (eventType, provider, count, delay = 5000) => {
 
   debounceByEventType[eventType](eventType, provider, count);
 };
+
 function getStoreByPopularity() {
   const providerEventsData = store.getValueFromStore(eventWeights);
   const weightedArr = weightedAverage.calculateWeightedAverage(
@@ -48,11 +44,16 @@ function getStoreByPopularity() {
 let startTime = null;
 let endTime = null;
 let intervalId = null;
+let pageStartTime = null;
+let idleStartTime = null;
+let totalActiveDuration = 0;
+let totalIdleDuration = 0;
 
 const throttleAddTime = throttle(addTime, CHECK_TIME);
 let currentProviderId = null;
 
 function trackTimeOnPage({ weight, id = null }) {
+  pageStartTime = Date.now();
   currentProviderId = id;
   startTime = Date.now();
   endTime = startTime + INTERVAL_TIME;
@@ -80,16 +81,9 @@ function startInterval(id) {
       endTime,
       endTime - startTime
     );
-    // const currentPath = window.location.pathname;
-    if (isUserActive(startTime, endTime)) {
-      startTime = Date.now();
-      console.log(
-        "inside of start time:",
-        startTime,
-        endTime,
-        endTime - startTime
-      );
-      incrementTimeOnPage(id);
+
+    if (!isUserActive(startTime, endTime)) {
+      if (!idleStartTime) idleStartTime = endTime;
     }
   }, CHECK_TIME - 50);
   console.log("started itnerval", intervalId);
@@ -119,7 +113,12 @@ function handleVisibilityChange() {
   console.log("visibility changed", document.hidden);
   if (document.hidden) {
     endTime = Date.now();
+    idleStartTime = endTime;
   } else {
+    if (idleStartTime) {
+      totalIdleDuration += Date.now() - idleStartTime;
+      idleStartTime = null;
+    }
     restartInterval();
     startTime = Date.now();
     endTime = updateEndTime(startTime, INTERVAL_TIME);
@@ -134,10 +133,13 @@ function addTime() {
     endTime,
     endTime - startTime
   );
-  if (!isUserActive(startTime, endTime)) {
-    console.log("user is not active");
-    restartInterval();
+
+  if (idleStartTime) {
+    totalIdleDuration += Date.now() - idleStartTime;
+    idleStartTime = null;
   }
+  restartInterval();
+
   endTime = updateEndTime(startTime, INTERVAL_TIME);
   console.log(startTime, endTime, endTime - startTime);
 }
@@ -145,17 +147,36 @@ function addTime() {
 function stopTrackingTimeOnPage() {
   if (intervalId) stopInterval();
 
+  if (idleStartTime) {
+    totalIdleDuration += Date.now() - idleStartTime;
+    idleStartTime = null;
+  }
+
+  const totalTime = Date.now() - pageStartTime;
+  totalActiveDuration = Math.round(totalTime - totalIdleDuration) / 1000;
+  console.log(
+    pageStartTime,
+    idleStartTime,
+    totalIdleDuration,
+    totalTime / 1000,
+    totalActiveDuration
+  );
+
+  store.addToStore(currentProviderId, "time_on_page", totalActiveDuration);
+
   events.forEach((event) => {
     console.log("removing event listeners");
     document.removeEventListener(event, throttleAddTime);
   });
   document.removeEventListener("visibilitychange", handleVisibilityChange);
+  totalIdleDuration = 0;
+  totalActiveDuration = 0;
 }
 
 export {
   trackEvent,
   registerEventsAndWeights,
   getStoreByPopularity,
-  trackTimeOnPage as trackTimeOnPages,
+  trackTimeOnPage,
   stopTrackingTimeOnPage,
 };
