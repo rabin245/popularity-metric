@@ -57,17 +57,29 @@ console.log(storeByPopularity);
 
 ### Tracking Time on Pages
 
-You can track the time spent on specific pages using the `trackTimeOnPages` function. It allows you to define patterns for page URLs and tracks the time spent on matching pages. Here's an example:
+You can track the time spent on specific pages using the trackTimeOnPages function. It allows you to define patterns for page URLs and tracks the time spent on matching pages. Here's an example:
 
 ```javascript
 import { trackTimeOnPages } from "@zaxiya/popularity-metric";
 
-// Track time on pages
 trackTimeOnPages({
-  weight: 0.1, // Weight for time_on_page metric
-  patterns: ["/provider/*"], // Patterns for page URLs
+  weight: 0.1,
+  patterns: [
+    {
+      pattern: /\/provider\/\w+/,
+      splitPosition: 2,
+    },
+  ],
 });
 ```
+
+The trackTimeOnPages function takes an object with configuration options as its parameter.
+
+- weight: This option allows you to assign a weight to the "time_on_page" metric. The weight determines the importance of the time spent on a page when calculating popularity metrics. You can adjust this value based on your specific requirements.
+
+- patterns: This option is an array of pattern objects. Each pattern object specifies a regular expression pattern (pattern) that matches the URLs of the pages you want to track. You can define multiple patterns to track different types of pages. In the provided code example, the pattern /\/provider\/\w+/ is used to match URLs that contain "/provider/" followed by one or more word characters.
+
+- splitPosition: This option is used to extract a specific part of the matched URL as the ID for every provider or page. The value you provide here determines the position of the segment that will be used as the ID. In the given example, 2 is used, indicating that the ID should be extracted from the second segment of the URL after the "/provider/" part.
 
 ## License
 
