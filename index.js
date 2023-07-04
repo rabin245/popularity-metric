@@ -3,10 +3,10 @@ import throttle from "./throttle";
 import * as store from "./store";
 import * as weightedAverage from "./weightedAverage";
 import {
-  checkPathNameAndStoreTime,
   setupHistoryListener,
   isUserActive,
   updateEndTime,
+  incrementTimeOnPage,
 } from "./utils";
 
 // constants for tracking time on page
@@ -46,16 +46,18 @@ function getStoreByPopularity() {
   return sortedWeightedArr;
 }
 
-function trackTimeOnPages({ weight, patterns }) {
+let startTime = null;
+let endTime = null;
+let functionCallFlag = null;
+
+function trackTimeOnPages({ weight, id = null }) {
+  startTime = Date.now();
+  functionCallFlag = true;
+  endTime = startTime + INTERVAL_TIME;
   // register the time on page event and weight
   registerEventsAndWeights([["time_on_page", weight]]);
-  if (!patterns) throw new Error("Patterns not provided");
-
-  let startTime = Date.now();
-  let endTime = startTime + INTERVAL_TIME;
 
   let intervalId = null; // Variable to store the interval ID
-
   // start the interval to check if the user if active
   function startInterval() {
     console.log("starting interval", intervalId);
@@ -67,7 +69,7 @@ function trackTimeOnPages({ weight, patterns }) {
         endTime,
         endTime - startTime
       );
-      const currentPath = window.location.pathname;
+      // const currentPath = window.location.pathname;
       if (isUserActive(startTime, endTime)) {
         startTime = Date.now();
         console.log(
@@ -76,7 +78,8 @@ function trackTimeOnPages({ weight, patterns }) {
           endTime,
           endTime - startTime
         );
-        checkPathNameAndStoreTime(currentPath, patterns);
+        // checkPathNameAndStoreTime(currentPath, patterns);
+        incrementTimeOnPage(id);
       }
     }, CHECK_TIME - 50);
     console.log("started itnerval", intervalId);
@@ -146,11 +149,16 @@ function trackTimeOnPages({ weight, patterns }) {
   // add time to endTime when location changes
   window.addEventListener("locationchange", handleLocationChange);
   function handleLocationChange() {
-    console.log("location chagned");
+    const idTest = functionCallFlag ? null : id;
+
+    console.log(
+      "location chagned with flag",
+      functionCallFlag,
+      "with id",
+      idTest
+    );
 
     if (intervalId) stopInterval();
-
-    const currentPath = window.location.pathname;
 
     events.forEach((event) => {
       console.log("removing event listeners");
@@ -158,26 +166,25 @@ function trackTimeOnPages({ weight, patterns }) {
     });
     document.removeEventListener("visibilitychange", handleVisibilityChange);
 
-    patterns.forEach(({ pattern }) => {
-      const regex = new RegExp(pattern);
-      if (regex.test(currentPath)) {
-        events.forEach((event) => {
-          console.log("adding event listeners");
-          document.addEventListener(event, throttleAddTime);
-        });
+    // if the function is called i.e. the page should be tracked
+    if (functionCallFlag) {
+      events.forEach((event) => {
+        console.log("adding event listeners");
+        document.addEventListener(event, throttleAddTime);
+      });
 
-        document.addEventListener("visibilitychange", handleVisibilityChange);
+      document.addEventListener("visibilitychange", handleVisibilityChange);
 
-        startTime = Date.now();
-        endTime = updateEndTime(startTime, INTERVAL_TIME);
-        startInterval();
-        return;
-      }
-    });
+      startTime = Date.now();
+      endTime = updateEndTime(startTime, INTERVAL_TIME);
+      startInterval();
+      functionCallFlag = false;
+      // return;
+    }
   }
 
-  // dispatch custom event for the first time on page load to run the event listeners
-  window.dispatchEvent(new Event("locationchange"));
+  // dispatch custom event when the page to be tracked is loaded
+  if (id && functionCallFlag) window.dispatchEvent(new Event("locationchange"));
 }
 
 export {
