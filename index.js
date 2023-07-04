@@ -1,5 +1,5 @@
-import debounce from "./debounce";
-import throttle from "./throttle";
+import debounce from "lodash/debounce";
+import throttle from "lodash/throttle";
 import * as store from "./store";
 import * as weightedAverage from "./weightedAverage";
 import {
