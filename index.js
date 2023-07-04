@@ -3,10 +3,10 @@ import throttle from "lodash/throttle";
 import * as store from "./store";
 import * as weightedAverage from "./weightedAverage";
 import {
-  checkPathNameAndStoreTime,
   setupHistoryListener,
   isUserActive,
   updateEndTime,
+	incrementTimeOnPath,
 } from "./utils";
 
 // constants for tracking time on page
@@ -53,7 +53,7 @@ function trackTimeOnPages({ weight, patterns }) {
 
   let startTime = Date.now();
   let endTime = startTime + INTERVAL_TIME;
-
+	let currentSplitPosition = null;
   let intervalId = null; // Variable to store the interval ID
 
   // start the interval to check if the user if active
@@ -76,7 +76,7 @@ function trackTimeOnPages({ weight, patterns }) {
           endTime,
           endTime - startTime
         );
-        checkPathNameAndStoreTime(currentPath, patterns);
+				incrementTimeOnPath(currentPath, currentSplitPosition);
       }
     }, CHECK_TIME - 50);
     console.log("started itnerval", intervalId);
@@ -158,7 +158,8 @@ function trackTimeOnPages({ weight, patterns }) {
     });
     document.removeEventListener("visibilitychange", handleVisibilityChange);
 
-    patterns.forEach(({ pattern }) => {
+    patterns.forEach(({ pattern, splitPosition }) => {
+			currentSplitPosition = splitPosition;
       const regex = new RegExp(pattern);
       if (regex.test(currentPath)) {
         events.forEach((event) => {
