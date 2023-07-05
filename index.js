@@ -1,12 +1,12 @@
-import debounce from "./debounce";
-import throttle from "./throttle";
+import debounce from "lodash/debounce";
+import throttle from "lodash/throttle";
 import * as store from "./store";
 import * as weightedAverage from "./weightedAverage";
 
 // constants for tracking time on page
-const ACTIVE_TIME = 5000;
-const THROTTLE_TIME = 2500;
-const DEBOUNCE_TIME = 5000;
+let activeTime = 5000;
+let throttleTime = 2500;
+let debounceTime = 5000;
 
 // events to track if the user is idle in page
 const events = ["mouseup", "keydown", "scroll", "mousemove"];
@@ -15,13 +15,27 @@ let eventWeights = {};
 
 const debounceByEventType = {};
 
+function registerTimeValue({
+  customActiveTime,
+  customThrottleTime,
+  customDebounceTime,
+}) {
+  activeTime = customActiveTime;
+  throttleTime = customThrottleTime;
+  debounceTime = customDebounceTime;
+}
+
+function registerIdleEvents(idleEvents) {
+  events = idleEvents;
+}
+
 function registerEventsAndWeights(eventsAndWeights) {
   eventsAndWeights.forEach(([eventType, weight]) => {
     eventWeights[eventType] = weight;
   });
 }
 
-const trackEvent = (eventType, provider, count, delay = DEBOUNCE_TIME) => {
+const trackEvent = (eventType, provider, count, delay = debounceTime) => {
   if (!debounceByEventType[eventType]) {
     debounceByEventType[eventType] = debounce((eventType, provider, count) => {
       store.addToStore(provider, eventType, count);
@@ -47,7 +61,7 @@ let idleStartTime = null;
 let totalActiveDuration = 0;
 let totalIdleDuration = 0;
 
-const throttleAddTime = throttle(addTime, THROTTLE_TIME);
+const throttleAddTime = throttle(addTime, throttleTime);
 let currentProviderId = null;
 
 function trackTimeOnPage({ weight, id = null }) {
@@ -78,7 +92,7 @@ function startTimer() {
     if (!idleStartTime) {
       idleStartTime = Date.now();
     }
-  }, ACTIVE_TIME + 100);
+  }, activeTime + 100);
 }
 
 function stopTimer() {
@@ -153,4 +167,6 @@ export {
   getStoreByPopularity,
   trackTimeOnPage,
   stopTrackingTimeOnPage,
+  registerIdleEvents,
+  registerTimeValue,
 };
