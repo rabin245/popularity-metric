@@ -95,6 +95,7 @@ function startSecondTimer() {
     }
 
     timerId = null;
+    isUserActive = false;
     removeUserActiveEventListeners();
   }, finalActiveCheckTime - initialActiveCheckTime);
 }
@@ -120,6 +121,7 @@ function removeUserActiveEventListeners() {
 
 function stopTrackingTime() {
   if (timerId) stopTimer();
+  isUserActive = false;
 
   removeUserActiveEventListeners();
 }
