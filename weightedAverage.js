@@ -9,9 +9,7 @@ export function calculateWeightedAverage(eventCounts, eventWeights) {
   );
 
   //Loop through array and calculate weightedAverage for each key
-  const weightedAverages = arr.map((value) => {
-    const [providerKey, weightObj] = value;
-
+  const weightedAverages = arr.map(([providerKey, weightObj]) => {
     const weightedSum = Object.entries(weightObj).reduce(
       (acc, [event, count]) => {
         return acc + count * eventWeights[event];
