@@ -1,13 +1,6 @@
 import debounce from "lodash/debounce";
-import throttle from "lodash/throttle";
 import * as store from "./store";
 import * as weightedAverage from "./weightedAverage";
-import {
-  setupHistoryListener,
-  isUserActive,
-  updateEndTime,
-	incrementTimeOnPath,
-} from "./utils";
 
 // constants for tracking time on page
 const INTERVAL_TIME = 10000;
@@ -45,145 +38,96 @@ function getStoreByPopularity() {
   const sortedWeightedArr = weightedAverage.sortWeights(weightedArr);
   return sortedWeightedArr;
 }
+let currentProviderId = null;
+let initialActiveCheckTime = 10 * 1000; // 10 sec
+let finalActiveCheckTime = 20 * 1000; // 20 sec
+// let finalActiveCheckTime = 5 * 60 * 1000; // 5 min
+// let point = 0;
+let timerId = null;
+let isUserActive = false;
 
-function trackTimeOnPages({ weight, patterns }) {
+function trackTimeOnPage({
+  weight,
+  id = null,
+  initialCheckTime = null,
+  finalCheckTime = null,
+}) {
   // register the time on page event and weight
   registerEventsAndWeights([["time_on_page", weight]]);
-  if (!patterns) throw new Error("Patterns not provided");
 
-  let startTime = Date.now();
-  let endTime = startTime + INTERVAL_TIME;
-	let currentSplitPosition = null;
-  let intervalId = null; // Variable to store the interval ID
+  if (!id) {
+    throw new Error("id is required!");
+  }
+  currentProviderId = id;
 
-  // start the interval to check if the user if active
-  function startInterval() {
-    console.log("starting interval", intervalId);
-    intervalId = setInterval(() => {
-      startTime = Date.now();
-      console.log(
-        "running setinterval with startTime:",
-        startTime,
-        endTime,
-        endTime - startTime
-      );
-      const currentPath = window.location.pathname;
-      if (isUserActive(startTime, endTime)) {
-        startTime = Date.now();
-        console.log(
-          "inside of start time:",
-          startTime,
-          endTime,
-          endTime - startTime
-        );
-				incrementTimeOnPath(currentPath, currentSplitPosition);
-      }
-    }, CHECK_TIME - 50);
-    console.log("started itnerval", intervalId);
+  if (initialCheckTime) {
+    initialActiveCheckTime = initialCheckTime;
+  }
+  if (finalCheckTime) {
+    finalActiveCheckTime = finalCheckTime;
   }
 
-  function stopInterval() {
-    console.log(
-      "stopping interval",
-      intervalId,
-      startTime,
-      endTime,
-      endTime - startTime
-    );
-    clearInterval(intervalId);
-    startTime = Date.now();
-    intervalId = null;
-  }
+  startInitialTimer();
+}
 
-  // restart the interval
-  function restartInterval() {
-    if (intervalId) stopInterval();
-    startInterval();
-  }
-
-  // instead of starting the interval with the function, use the custom event to start the interval
-  // startInterval();
-
-  // restart interval when document is visible
-  function handleVisibilityChange() {
-    console.log("visibility changed", document.hidden);
-    if (document.hidden) {
-      endTime = Date.now();
-    } else {
-      restartInterval();
-      startTime = Date.now();
-      endTime = updateEndTime(startTime, INTERVAL_TIME);
-    }
-    console.log(startTime, endTime, endTime - startTime);
-  }
-  // document.addEventListener("visibilitychange", handleVisibilityChange);
-
-  function addTime() {
-    console.log(
-      "adding time to active time",
-      startTime,
-      endTime,
-      endTime - startTime
-    );
-    if (!isUserActive(startTime, endTime)) {
-      console.log("user is not active");
-      restartInterval();
-    }
-    endTime = updateEndTime(startTime, INTERVAL_TIME);
-    console.log(startTime, endTime, endTime - startTime);
-  }
-
-  // add time to endTime when user is active on the page
-  // i.e. when user is scrolling, moving mouse, typing, etc.
-  const throttleAddTime = throttle(addTime, CHECK_TIME);
-  // events.forEach((event) => {
-  //   document.addEventListener(event, throttleAddTime);
-  // });
-
-  // dispatch custom event when location changes
-  setupHistoryListener();
-
-  // add time to endTime when location changes
-  window.addEventListener("locationchange", handleLocationChange);
-  function handleLocationChange() {
-    console.log("location chagned");
-
-    if (intervalId) stopInterval();
-
-    const currentPath = window.location.pathname;
-
+function startInitialTimer() {
+  timerId = setTimeout(() => {
+    // point = 1;
+    console.log("initial timer callback");
+    console.log("adding event listeners");
     events.forEach((event) => {
-      console.log("removing event listeners");
-      document.removeEventListener(event, throttleAddTime);
+      document.addEventListener(event, handleUserEvent);
     });
-    document.removeEventListener("visibilitychange", handleVisibilityChange);
 
-    patterns.forEach(({ pattern, splitPosition }) => {
-			currentSplitPosition = splitPosition;
-      const regex = new RegExp(pattern);
-      if (regex.test(currentPath)) {
-        events.forEach((event) => {
-          console.log("adding event listeners");
-          document.addEventListener(event, throttleAddTime);
-        });
+    // add to store
+    store.addToStore(currentProviderId, "time_on_page", 1);
+    // start second timer
+    startSecondTimer();
+  }, initialActiveCheckTime);
+}
 
-        document.addEventListener("visibilitychange", handleVisibilityChange);
+function startSecondTimer() {
+  timerId = setTimeout(() => {
+    console.log("second timer callback");
+    if (isUserActive) {
+      //  point = 2;
+      store.addToStore(currentProviderId, "time_on_page", 1);
+    }
 
-        startTime = Date.now();
-        endTime = updateEndTime(startTime, INTERVAL_TIME);
-        startInterval();
-        return;
-      }
-    });
-  }
+    timerId = null;
+    removeUserActiveEventListeners();
+  }, finalActiveCheckTime - initialActiveCheckTime);
+}
 
-  // dispatch custom event for the first time on page load to run the event listeners
-  window.dispatchEvent(new Event("locationchange"));
+function stopTimer() {
+  console.log("stopping any timer");
+  clearTimeout(timerId);
+}
+
+function handleUserEvent() {
+  console.log("user is active because of event");
+  isUserActive = true;
+
+  removeUserActiveEventListeners();
+}
+
+function removeUserActiveEventListeners() {
+  console.log("now removing listeners");
+  events.forEach((event) => {
+    document.removeEventListener(event, handleUserEvent);
+  });
+}
+
+function stopTrackingTime() {
+  if (timerId) stopTimer();
+
+  removeUserActiveEventListeners();
 }
 
 export {
   trackEvent,
   registerEventsAndWeights,
   getStoreByPopularity,
-  trackTimeOnPages,
+  trackTimeOnPage,
+  stopTrackingTime,
 };

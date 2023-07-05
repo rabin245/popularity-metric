@@ -1,5 +1,12 @@
 export function addToStore(key, eventType, count) {
-  console.log("adding to store for key", key, "event type", eventType);
+  console.log(
+    "adding to store for key",
+    key,
+    "event type",
+    eventType,
+    "count",
+    count
+  );
   // Get the stored data from localStorage
   let storedData = JSON.parse(localStorage.getItem("providersStore"));
 
