@@ -4,67 +4,70 @@ import * as store from "./store";
 import * as weightedAverage from "./weightedAverage";
 
 // constants for tracking time on page
-let activeTime = 5000;
-let throttleTime = 2500;
-let debounceTime = 5000;
+let activeTimeThreshold = 5 * 1000; // 5 seconds
+let throttleDelay = 2.5 * 1000; // 2.5 seconds
+let debounceDelay = 5 * 1000; // 5 seconds
 
 // events to track if the user is idle in page
-const events = ["mouseup", "keydown", "scroll", "mousemove"];
+let trackedEvents = ["mouseup", "keydown", "scroll", "mousemove"];
 
-let eventWeights = {};
+let eventWeightsMap = {};
 
-const debounceByEventType = {};
+// debounce functions for tracking each event type
+const debounceByEventHandlers = {};
 
-function registerTimeValue({
-  customActiveTime,
-  customThrottleTime,
-  customDebounceTime,
-}) {
-  activeTime = customActiveTime;
-  throttleTime = customThrottleTime;
-  debounceTime = customDebounceTime;
-}
-
-function registerIdleEvents(idleEvents) {
-  events = idleEvents;
-}
-
-function registerEventsAndWeights(eventsAndWeights) {
-  eventsAndWeights.forEach(([eventType, weight]) => {
-    eventWeights[eventType] = weight;
-  });
-}
-
-const trackEvent = (eventType, provider, count, delay = debounceTime) => {
-  if (!debounceByEventType[eventType]) {
-    debounceByEventType[eventType] = debounce((eventType, provider, count) => {
-      store.addToStore(provider, eventType, count);
-    }, delay);
-  }
-
-  debounceByEventType[eventType](eventType, provider, count);
-};
-
-function getStoreByPopularity() {
-  const providerEventsData = store.getValueFromStore(eventWeights);
-  const weightedArr = weightedAverage.calculateWeightedAverage(
-    providerEventsData,
-    eventWeights
-  );
-  const sortedWeightedArr = weightedAverage.sortWeights(weightedArr);
-  return sortedWeightedArr;
-}
-
+// variables for tracking time on page
 let timeoutId = null;
 let pageStartTime = null;
 let idleStartTime = null;
 let totalActiveDuration = 0;
 let totalIdleDuration = 0;
-
-const throttleAddTime = throttle(addTime, throttleTime);
 let currentProviderId = null;
 
-function trackTimeOnPage({ weight, id = null }) {
+function registerTimeThresholds({
+  customActiveTimeThreshold,
+  customThrottleDelay,
+  customDebounceDelay,
+}) {
+  activeTimeThreshold = customActiveTimeThreshold;
+  throttleDelay = customThrottleDelay;
+  debounceDelay = customDebounceDelay;
+}
+
+function registerTrackedEvents(events) {
+  trackedEvents = events;
+}
+
+function registerEventsAndWeights(eventsAndWeights) {
+  eventWeightsMap = Object.fromEntries(eventsAndWeights);
+}
+
+const trackEvent = (eventType, provider, count, delay = debounceDelay) => {
+  if (!debounceByEventHandlers[eventType]) {
+    debounceByEventHandlers[eventType] = debounce(
+      (eventType, provider, count) => {
+        store.addToStore(provider, eventType, count);
+      },
+      delay
+    );
+  }
+
+  debounceByEventHandlers[eventType](eventType, provider, count);
+};
+
+function getStoreByPopularity() {
+  const providerEventsData = store.getValueFromStore(eventWeightsMap);
+  const weightedArr = weightedAverage.calculateWeightedAverage(
+    providerEventsData,
+    eventWeightsMap
+  );
+  const sortedWeightedArr = weightedAverage.sortWeights(weightedArr);
+  return sortedWeightedArr;
+}
+
+const throttledHandleActiveEvent = throttle(handleActiveEvent, throttleDelay);
+
+function startTrackingTimeOnPage({ weight, id = null }) {
   totalIdleDuration = 0;
   totalActiveDuration = 0;
   pageStartTime = Date.now();
@@ -74,41 +77,41 @@ function trackTimeOnPage({ weight, id = null }) {
   registerEventsAndWeights([["time_on_page", weight]]);
 
   // add event listeners
-  events.forEach((event) => {
+  trackedEvents.forEach((event) => {
     console.log("adding event listeners");
-    document.addEventListener(event, throttleAddTime);
+    document.addEventListener(event, throttledHandleActiveEvent);
   });
 
-  document.addEventListener("visibilitychange", handleVisibilityChange);
+  document.addEventListener("visibilitychange", onVisibilityChange);
 
   // start tracking
-  startTimer();
+  startIdleTimer();
 }
 
-function startTimer() {
+function startIdleTimer() {
   timeoutId = setTimeout(() => {
     console.log("this means user is idle");
 
     if (!idleStartTime) {
       idleStartTime = Date.now();
     }
-  }, activeTime + 100);
+  }, activeTimeThreshold + 100);
 }
 
-function stopTimer() {
+function stopIdleTimer() {
   console.log("stoping timer");
   clearTimeout(timeoutId);
   timeoutId = null;
 }
 
 // restart the interval
-function restartTimer() {
-  if (timeoutId) stopTimer();
-  startTimer();
+function restartIdleTimer() {
+  if (timeoutId) stopIdleTimer();
+  startIdleTimer();
 }
 
 // restart interval when document is visible
-function handleVisibilityChange() {
+function onVisibilityChange() {
   console.log("visibility changed", document.hidden);
   if (document.hidden) {
     idleStartTime = Date.now();
@@ -117,21 +120,21 @@ function handleVisibilityChange() {
       totalIdleDuration += Date.now() - idleStartTime;
       idleStartTime = null;
     }
-    restartTimer();
+    restartIdleTimer();
   }
 }
 
-function addTime() {
+function handleActiveEvent() {
   console.log("user active event");
   if (idleStartTime) {
     totalIdleDuration += Date.now() - idleStartTime;
     idleStartTime = null;
   }
-  restartTimer();
+  restartIdleTimer();
 }
 
-function stopTrackingTimeOnPage() {
-  if (timeoutId) stopTimer();
+function endTrackingTimeOnPage() {
+  if (timeoutId) stopIdleTimer();
 
   if (idleStartTime) {
     totalIdleDuration += Date.now() - idleStartTime;
@@ -139,7 +142,7 @@ function stopTrackingTimeOnPage() {
   }
 
   const totalTime = Date.now() - pageStartTime;
-  totalActiveDuration = Math.round(totalTime - totalIdleDuration) / 1000;
+  totalActiveDuration = Math.floor((totalTime - totalIdleDuration) / 1000);
 
   console.log(
     pageStartTime,
@@ -151,12 +154,14 @@ function stopTrackingTimeOnPage() {
 
   store.addToStore(currentProviderId, "time_on_page", totalActiveDuration);
 
-  events.forEach((event) => {
+  trackedEvents.forEach((event) => {
     console.log("removing event listeners");
-    document.removeEventListener(event, throttleAddTime);
+    document.removeEventListener(event, throttledHandleActiveEvent);
   });
-  document.removeEventListener("visibilitychange", handleVisibilityChange);
+  document.removeEventListener("visibilitychange", onVisibilityChange);
 
+  pageStartTime = null;
+  currentProviderId = null;
   totalIdleDuration = 0;
   totalActiveDuration = 0;
 }
@@ -165,8 +170,8 @@ export {
   trackEvent,
   registerEventsAndWeights,
   getStoreByPopularity,
-  trackTimeOnPage,
-  stopTrackingTimeOnPage,
-  registerIdleEvents,
-  registerTimeValue,
+  startTrackingTimeOnPage,
+  endTrackingTimeOnPage,
+  registerTrackedEvents,
+  registerTimeThresholds,
 };
