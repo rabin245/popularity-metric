@@ -51,6 +51,7 @@ function trackTimeOnPage({
   id = null,
   initialCheckTime = null,
   finalCheckTime = null,
+  checkPoints = [7000, 10000, 15000],
 }) {
   // register the time on page event and weight
   registerEventsAndWeights([["time_on_page", weight]]);
@@ -67,7 +68,54 @@ function trackTimeOnPage({
     finalActiveCheckTime = finalCheckTime;
   }
 
-  startInitialTimer();
+  timerId = smthFunction(checkPoints);
+}
+
+function smthFunction(checkPoints) {
+  // if needed to check for user activity before first check point
+  console.log("adding event listeners");
+  events.forEach((event) => {
+    document.addEventListener(event, handleUserEvent);
+  });
+
+  // [10,20,30]
+  const timers = checkPoints.map((currentCheckPoint, index) => {
+    const prevCheckPoint = checkPoints[index - 1] || 0;
+
+    return function () {
+      return setTimeout(() => {
+        console.log("timer callback", timerId, index, currentCheckPoint);
+        // check if user is active and add to store
+        if (isUserActive) {
+          console.log("user is active");
+          store.addToStore(currentProviderId, "time_on_page", 1);
+          isUserActive = false;
+        }
+
+        // check if it's not the last check point i.e. last check cycle
+        if (index !== checkPoints.length - 1) {
+          console.log("not the last check ponit");
+          console.log("adding event listeners");
+          events.forEach((event) => {
+            document.addEventListener(event, handleUserEvent);
+          });
+          // call next timer function
+          timerId = timers[index + 1]();
+        } else {
+          console.log("last check ponit");
+
+          // remove event listeners if it's the last check cycle
+          removeUserActiveEventListeners();
+          timerId = null;
+          isUserActive = false;
+        }
+      }, currentCheckPoint - prevCheckPoint);
+    };
+  });
+
+  // start the cycle
+  // timers[0];
+  return timers[0]();
 }
 
 function startInitialTimer() {
