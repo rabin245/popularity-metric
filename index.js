@@ -77,7 +77,7 @@ function executeCheckpointTimers(checkPoints) {
         }
 
         // check if it's not the last check point i.e. last check cycle
-        if (index !== checkPoints.length - 1) {
+        if (!isLastCheckPoint(index, checkPoints.length)) {
           console.log("not the last check ponit");
           setupEventListeners();
           // call next timer function
@@ -95,15 +95,18 @@ function executeCheckpointTimers(checkPoints) {
   });
 
   // start the cycle
-  // timerCallback[0];
   return timerCallback[0]();
 }
 
 function setupEventListeners() {
   console.log("adding event listeners");
-  trackedEvents.forEach(event => {
+  events.forEach((event) => {
     document.addEventListener(event, handleUserEvent);
   });
+}
+
+function isLastCheckPoint(index, length) {
+  return index === length - 1;
 }
 
 function stopTimer() {
