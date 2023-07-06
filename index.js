@@ -11,7 +11,7 @@ let debounceDelay = 5 * 1000; // 5 seconds
 // events to track if the user is idle in page
 let trackedEvents = ["mouseup", "keydown", "scroll", "mousemove"];
 
-let eventWeightsMap = {};
+let eventWeightsMap = new Map();
 
 // debounce functions for tracking each event type
 const debounceByEventHandlers = {};
@@ -39,7 +39,7 @@ function registerTrackedEvents(events) {
 }
 
 function registerEventsAndWeights(eventsAndWeights) {
-  eventWeightsMap = Object.fromEntries(eventsAndWeights);
+  eventWeightsMap = new Map(eventsAndWeights);
 }
 
 const trackEvent = (eventType, provider, count, delay = debounceDelay) => {

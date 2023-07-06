@@ -1,29 +1,36 @@
 function getStoredData() {
-  return JSON.parse(localStorage.getItem("providersStore")) || {};
+  const storedData = JSON.parse(localStorage.getItem("providersStore"));
+  return storedData ? new Map(Object.entries(storedData)) : new Map();
 }
 
-function setStoredData(data) {
-  localStorage.setItem("providersStore", JSON.stringify(data));
+function setStoredData(dataMap) {
+  const dataObj = Object.fromEntries(dataMap);
+  localStorage.setItem("providersStore", JSON.stringify(dataObj));
 }
 
 export function addToStore(key, eventType, count) {
-  console.log("adding to store for key", key, "event type", eventType);
+  key = String(key);
+  console.log(
+    "adding to store for key",
+    key,
+    "event type",
+    eventType,
+    "with count",
+    count
+  );
   // Get the stored data from localStorage
   const storedData = getStoredData();
+  let eventData = storedData.get(key);
 
-  if (!storedData) {
-    storedData = {};
+  if (!eventData) {
+    eventData = {};
   }
 
-  if (!storedData[key]) {
-    storedData[key] = {};
+  if (!eventData[eventType]) {
+    eventData[eventType] = 0;
   }
-
-  if (!storedData[key][eventType]) {
-    storedData[key][eventType] = 0;
-  }
-
-  storedData[key][eventType] += count;
+  eventData[eventType] += count;
+  storedData.set(key, eventData);
 
   // Save the updated data to localStorage
   setStoredData(storedData);
@@ -33,18 +40,21 @@ export function getValueFromStore(eventWeights) {
   // Get the stored data from localStorage
   const storedData = getStoredData();
 
-  const eventTypes = Object.keys(eventWeights);
+  const eventTypes = [...eventWeights.keys()];
 
   // Initialize missing event counts to 0
-  if (storedData) {
-    Object.values(storedData).forEach((eventCountObj) => {
-      eventTypes.forEach((event) => {
-        if (eventCountObj[event] === undefined) {
-          eventCountObj[event] = 0;
-        }
-      });
+  storedData.forEach((eventData, key) => {
+    eventTypes.forEach((eventType) => {
+      if (!eventData.hasOwnProperty(eventType)) {
+        eventData[eventType] = 0;
+      }
     });
-  }
+  });
 
-  return storedData;
+  const mappedEntries = Array.from(storedData.entries()).map(([key, value]) => [
+    key,
+    new Map(Object.entries(value)),
+  ]);
+
+  return new Map(mappedEntries);
 }
