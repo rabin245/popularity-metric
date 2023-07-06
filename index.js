@@ -46,7 +46,7 @@ function getStoreByPopularity() {
   return sortedWeightedArr;
 }
 
-function trackTimeOnPage({
+function checkUserActivityBetweenCheckpoints({
   weight,
   id = null,
   checkPoints = [7000, 10000, 15000],
@@ -132,7 +132,7 @@ function removeUserActiveEventListeners() {
   });
 }
 
-function stopTrackingTime() {
+function stopCheckingUserActivity() {
   if (timerId) stopTimer();
   isUserActive = false;
 
@@ -143,6 +143,6 @@ export {
   trackEvent,
   registerEventsAndWeights,
   getStoreByPopularity,
-  trackTimeOnPage,
-  stopTrackingTime,
+  checkUserActivityBetweenCheckpoints,
+  stopCheckingUserActivity,
 };

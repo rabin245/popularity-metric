@@ -47,28 +47,28 @@ import { trackEvent } from "@zaxiya/popularity-metric";
 trackEvent("num_of_review", "providerA", 1);
 ```
 
-### Tracking Time on Pages
+### Checking user activity between checkpoints
 
-#### `trackTimeOnPage({ weight, id, checkPoints })`
+#### `checkUserActivityBetweenCheckpoints({ weight, id, checkPoints })`
 
 Checks if the user is active between every checkpoint and adds a point to the "time_on_page" event. The weight parameter specifies the weight of the "time_on_page" event, id is the identifier for the page or provider, and checkPoints (optional) is an array of time checkpoints in milliseconds where the "time_on_page" event will be triggered.
 
-#### `stopTrackingTime()`
+#### `stopCheckingUserActivity()`
 
-Stops tracking the time on the page and removes event listeners.
+Stops checking user activity between checkpoints and removes event listeners.
 
 ```javascript
 import { trackTimeOnPages } from "@zaxiya/popularity-metric";
 
 // Track time on pages
-trackTimeOnPage({
-  weight: 5,
+checkUserActivityBetweenCheckpoints({
+  weight: 0.05,
   id: "homepage",
-  checkPoints: [7000, 10000, 15000],
+  checkPoints: [10000, 30000, 60000],
 });
 
 // some code...
-stopTrackingTime();
+stopCheckingUserActivity();
 ```
 
 ### Getting Store by Popularity
