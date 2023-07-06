@@ -2,10 +2,6 @@ import debounce from "lodash/debounce";
 import * as store from "./store";
 import * as weightedAverage from "./weightedAverage";
 
-// constants for tracking time on page
-const INTERVAL_TIME = 10000;
-const CHECK_TIME = 5000;
-
 // events to track if the user is idle in page
 const events = ["mouseup", "keydown", "scroll", "mousemove"];
 
@@ -38,6 +34,8 @@ function getStoreByPopularity() {
   const sortedWeightedArr = weightedAverage.sortWeights(weightedArr);
   return sortedWeightedArr;
 }
+
+//All variables for time on page
 let currentProviderId = null;
 let initialActiveCheckTime = 10 * 1000; // 10 sec
 let finalActiveCheckTime = 20 * 1000; // 20 sec
@@ -68,84 +66,59 @@ function trackTimeOnPage({
     finalActiveCheckTime = finalCheckTime;
   }
 
-  timerId = smthFunction(checkPoints);
+  timerId = executeCheckpointTimers(checkPoints);
 }
 
-function smthFunction(checkPoints) {
+function executeCheckpointTimers(checkPoints) {
   // if needed to check for user activity before first check point
-  console.log("adding event listeners");
-  events.forEach((event) => {
-    document.addEventListener(event, handleUserEvent);
-  });
+  setupEventListeners();
 
   // [10,20,30]
-  const timers = checkPoints.map((currentCheckPoint, index) => {
+  const timerCallback = checkPoints.map((currentCheckPoint, index) => {
     const prevCheckPoint = checkPoints[index - 1] || 0;
 
     return function () {
       return setTimeout(() => {
-        console.log("timer callback", timerId, index, currentCheckPoint);
-        // check if user is active and add to store
-        if (isUserActive) {
-          console.log("user is active");
-          store.addToStore(currentProviderId, "time_on_page", 1);
-          isUserActive = false;
-        }
-
-        // check if it's not the last check point i.e. last check cycle
-        if (index !== checkPoints.length - 1) {
-          console.log("not the last check ponit");
-          console.log("adding event listeners");
-          events.forEach((event) => {
-            document.addEventListener(event, handleUserEvent);
-          });
-          // call next timer function
-          timerId = timers[index + 1]();
-        } else {
-          console.log("last check ponit");
-
-          // remove event listeners if it's the last check cycle
-          removeUserActiveEventListeners();
-          timerId = null;
-          isUserActive = false;
-        }
+				handleTimerCallback();
       }, currentCheckPoint - prevCheckPoint);
     };
   });
 
   // start the cycle
-  // timers[0];
-  return timers[0]();
+  // timerCallback[0];
+  return timerCallback[0]();
 }
 
-function startInitialTimer() {
-  timerId = setTimeout(() => {
-    // point = 1;
-    console.log("initial timer callback");
-    console.log("adding event listeners");
-    events.forEach((event) => {
-      document.addEventListener(event, handleUserEvent);
-    });
-
-    // add to store
-    store.addToStore(currentProviderId, "time_on_page", 1);
-    // start second timer
-    startSecondTimer();
-  }, initialActiveCheckTime);
+function setupEventListeners(){
+	console.log("adding event listeners");
+  events.forEach((event) => {
+    document.addEventListener(event, handleUserEvent);
+  });
 }
 
-function startSecondTimer() {
-  timerId = setTimeout(() => {
-    console.log("second timer callback");
-    if (isUserActive) {
-      //  point = 2;
-      store.addToStore(currentProviderId, "time_on_page", 1);
-    }
+function handleTimerCallback () {
+	console.log("timer callback", timerId, index, currentCheckPoint);
+	// check if user is active and add to store
+	if (isUserActive) {
+		console.log("user is active");
+		store.addToStore(currentProviderId, "time_on_page", 1);
+		isUserActive = false;
+	}
 
-    timerId = null;
-    isUserActive = false;
-    removeUserActiveEventListeners();
-  }, finalActiveCheckTime - initialActiveCheckTime);
+	// check if it's not the last check point i.e. last check cycle
+	if (index !== checkPoints.length - 1) {
+		console.log("not the last check ponit");
+		setupEventListeners();
+		// call next timer function
+		timerId = timers[index + 1]();
+	} else {
+		console.log("last check ponit");
+
+		// remove event listeners if it's the last check cycle
+		removeUserActiveEventListeners();
+		timerId = null;
+		isUserActive = false;
+	}
 }
 
 function stopTimer() {
