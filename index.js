@@ -2,34 +2,36 @@ import debounce from "lodash/debounce";
 import * as store from "./store";
 import * as weightedAverage from "./weightedAverage";
 
+//Constants for tracking time on page
+const debounceDelay = 5* 1000; // 5 seconds
 // events to track if the user is idle in page
-const events = ["mouseup", "keydown", "scroll", "mousemove"];
+const trackedEvents = ["mouseup", "keydown", "scroll", "mousemove"];
 
-let eventWeights = {};
+let eventWeightsMap = {};
 
-const debounceByEventType = {};
+const debounceByEventHandlers = {};
 
 function registerEventsAndWeights(eventsAndWeights) {
   eventsAndWeights.forEach(([eventType, weight]) => {
-    eventWeights[eventType] = weight;
+    eventWeightsMap[eventType] = weight;
   });
 }
 
-const trackEvent = (eventType, provider, count, delay = 5000) => {
-  if (!debounceByEventType[eventType]) {
-    debounceByEventType[eventType] = debounce((eventType, provider, count) => {
+const trackEvent = (eventType, provider, count, delay = debounceDelay) => {
+  if (!debounceByEventHandlers[eventType]) {
+    debounceByEventHandlers[eventType] = debounce((eventType, provider, count) => {
       store.addToStore(provider, eventType, count);
     }, delay);
   }
 
-  debounceByEventType[eventType](eventType, provider, count);
+  debounceByEventHandlers[eventType](eventType, provider, count);
 };
 
 function getStoreByPopularity() {
-  const providerEventsData = store.getValueFromStore(eventWeights);
+  const providerEventsData = store.getValueFromStore(eventWeightsMap);
   const weightedArr = weightedAverage.calculateWeightedAverage(
     providerEventsData,
-    eventWeights
+    eventWeightsMap
   );
   const sortedWeightedArr = weightedAverage.sortWeights(weightedArr);
   return sortedWeightedArr;
@@ -37,18 +39,12 @@ function getStoreByPopularity() {
 
 //All variables for time on page
 let currentProviderId = null;
-let initialActiveCheckTime = 10 * 1000; // 10 sec
-let finalActiveCheckTime = 20 * 1000; // 20 sec
-// let finalActiveCheckTime = 5 * 60 * 1000; // 5 min
-// let point = 0;
 let timerId = null;
 let isUserActive = false;
 
 function trackTimeOnPage({
   weight,
   id = null,
-  initialCheckTime = null,
-  finalCheckTime = null,
   checkPoints = [7000, 10000, 15000],
 }) {
   // register the time on page event and weight
@@ -58,13 +54,6 @@ function trackTimeOnPage({
     throw new Error("id is required!");
   }
   currentProviderId = id;
-
-  if (initialCheckTime) {
-    initialActiveCheckTime = initialCheckTime;
-  }
-  if (finalCheckTime) {
-    finalActiveCheckTime = finalCheckTime;
-  }
 
   timerId = executeCheckpointTimers(checkPoints);
 }
@@ -79,7 +68,28 @@ function executeCheckpointTimers(checkPoints) {
 
     return function () {
       return setTimeout(() => {
-				handleTimerCallback();
+        console.log("timer callback", timerId, index, currentCheckPoint);
+        // check if user is active and add to store
+        if (isUserActive) {
+          console.log("user is active");
+          store.addToStore(currentProviderId, "time_on_page", 1);
+          isUserActive = false;
+        }
+
+        // check if it's not the last check point i.e. last check cycle
+        if (index !== checkPoints.length - 1) {
+          console.log("not the last check ponit");
+          setupEventListeners();
+          // call next timer function
+          timerId = timerCallback[index + 1]();
+        } else {
+          console.log("last check ponit");
+
+          // remove event listeners if it's the last check cycle
+          removeUserActiveEventListeners();
+          timerId = null;
+          isUserActive = false;
+        }
       }, currentCheckPoint - prevCheckPoint);
     };
   });
@@ -89,36 +99,11 @@ function executeCheckpointTimers(checkPoints) {
   return timerCallback[0]();
 }
 
-function setupEventListeners(){
-	console.log("adding event listeners");
-  events.forEach((event) => {
+function setupEventListeners() {
+  console.log("adding event listeners");
+  trackedEvents.forEach(event => {
     document.addEventListener(event, handleUserEvent);
   });
-}
-
-function handleTimerCallback () {
-	console.log("timer callback", timerId, index, currentCheckPoint);
-	// check if user is active and add to store
-	if (isUserActive) {
-		console.log("user is active");
-		store.addToStore(currentProviderId, "time_on_page", 1);
-		isUserActive = false;
-	}
-
-	// check if it's not the last check point i.e. last check cycle
-	if (index !== checkPoints.length - 1) {
-		console.log("not the last check ponit");
-		setupEventListeners();
-		// call next timer function
-		timerId = timerCallback[index + 1]();
-	} else {
-		console.log("last check ponit");
-
-		// remove event listeners if it's the last check cycle
-		removeUserActiveEventListeners();
-		timerId = null;
-		isUserActive = false;
-	}
 }
 
 function stopTimer() {
@@ -135,7 +120,7 @@ function handleUserEvent() {
 
 function removeUserActiveEventListeners() {
   console.log("now removing listeners");
-  events.forEach((event) => {
+  trackedEvents.forEach(event => {
     document.removeEventListener(event, handleUserEvent);
   });
 }
