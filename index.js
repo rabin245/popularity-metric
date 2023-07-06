@@ -3,13 +3,19 @@ import * as store from "./store";
 import * as weightedAverage from "./weightedAverage";
 
 //Constants for tracking time on page
-const debounceDelay = 5* 1000; // 5 seconds
+const debounceDelay = 5 * 1000; // 5 seconds
 // events to track if the user is idle in page
 const trackedEvents = ["mouseup", "keydown", "scroll", "mousemove"];
 
 let eventWeightsMap = {};
 
+// debounce functions for tracking each event type
 const debounceByEventHandlers = {};
+
+// variables for tracking time on page
+let currentProviderId = null;
+let timerId = null;
+let isUserActive = false;
 
 function registerEventsAndWeights(eventsAndWeights) {
   eventsAndWeights.forEach(([eventType, weight]) => {
@@ -19,9 +25,12 @@ function registerEventsAndWeights(eventsAndWeights) {
 
 const trackEvent = (eventType, provider, count, delay = debounceDelay) => {
   if (!debounceByEventHandlers[eventType]) {
-    debounceByEventHandlers[eventType] = debounce((eventType, provider, count) => {
-      store.addToStore(provider, eventType, count);
-    }, delay);
+    debounceByEventHandlers[eventType] = debounce(
+      (eventType, provider, count) => {
+        store.addToStore(provider, eventType, count);
+      },
+      delay
+    );
   }
 
   debounceByEventHandlers[eventType](eventType, provider, count);
@@ -36,11 +45,6 @@ function getStoreByPopularity() {
   const sortedWeightedArr = weightedAverage.sortWeights(weightedArr);
   return sortedWeightedArr;
 }
-
-//All variables for time on page
-let currentProviderId = null;
-let timerId = null;
-let isUserActive = false;
 
 function trackTimeOnPage({
   weight,
@@ -100,7 +104,7 @@ function executeCheckpointTimers(checkPoints) {
 
 function setupEventListeners() {
   console.log("adding event listeners");
-  events.forEach((event) => {
+  trackedEvents.forEach((event) => {
     document.addEventListener(event, handleUserEvent);
   });
 }
@@ -123,7 +127,7 @@ function handleUserEvent() {
 
 function removeUserActiveEventListeners() {
   console.log("now removing listeners");
-  trackedEvents.forEach(event => {
+  trackedEvents.forEach((event) => {
     document.removeEventListener(event, handleUserEvent);
   });
 }
