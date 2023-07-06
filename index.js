@@ -110,7 +110,7 @@ function handleTimerCallback () {
 		console.log("not the last check ponit");
 		setupEventListeners();
 		// call next timer function
-		timerId = timers[index + 1]();
+		timerId = timerCallback[index + 1]();
 	} else {
 		console.log("last check ponit");
 
