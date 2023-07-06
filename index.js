@@ -27,6 +27,7 @@ const trackEvent = (eventType, provider, count, delay = debounceDelay) => {
   if (!debounceByEventHandlers[eventType]) {
     debounceByEventHandlers[eventType] = debounce(
       (eventType, provider, count) => {
+        console.log("\n\nthis is a debounced function for event", eventType);
         store.addToStore(provider, eventType, count);
       },
       delay
@@ -59,6 +60,8 @@ function checkUserActivityBetweenCheckpoints({
   }
   currentProviderId = id;
 
+  console.log("\n\n tracking user activity between checkpoints");
+
   timerId = executeCheckpointTimers(checkPoints);
 }
 
@@ -72,22 +75,30 @@ function executeCheckpointTimers(checkPoints) {
 
     return function () {
       return setTimeout(() => {
-        console.log("timer callback", timerId, index, currentCheckPoint);
+        console.log(
+          "\n\ntimer callback with timerId",
+          timerId,
+          "with checkpoint",
+          currentCheckPoint
+        );
         // check if user is active and add to store
         if (isUserActive) {
-          console.log("user is active");
+          console.log(
+            "user was active in this checkpoint so adding point to store"
+          );
           store.addToStore(currentProviderId, "time_on_page", 1);
           isUserActive = false;
+        } else {
+          console.log("user was not active in this checkpoint");
         }
 
         // check if it's not the last check point i.e. last check cycle
         if (!isLastCheckPoint(index, checkPoints.length)) {
-          console.log("not the last check ponit");
           setupEventListeners();
           // call next timer function
           timerId = timerCallback[index + 1]();
         } else {
-          console.log("last check ponit");
+          console.log("\nthis is the last check point");
 
           // remove event listeners if it's the last check cycle
           removeUserActiveEventListeners();
@@ -103,7 +114,7 @@ function executeCheckpointTimers(checkPoints) {
 }
 
 function setupEventListeners() {
-  console.log("adding event listeners");
+  console.log("\nadding event listeners to track user activity");
   trackedEvents.forEach((event) => {
     document.addEventListener(event, handleUserEvent);
   });
@@ -114,29 +125,32 @@ function isLastCheckPoint(index, length) {
 }
 
 function stopTimer() {
-  console.log("stopping any timer");
+  console.log("stopping any active timer");
   clearTimeout(timerId);
 }
 
-function handleUserEvent() {
-  console.log("user is active because of event");
+function handleUserEvent(event) {
+  console.log("\n\n\nuser is now active because of event", event.type);
   isUserActive = true;
 
   removeUserActiveEventListeners();
 }
 
 function removeUserActiveEventListeners() {
-  console.log("now removing listeners");
+  console.log("now removing listeners", "\n\n\n");
   trackedEvents.forEach((event) => {
     document.removeEventListener(event, handleUserEvent);
   });
 }
 
 function stopCheckingUserActivity() {
+  console.log("\n\nstopping checking user activity");
+
   if (timerId) stopTimer();
   isUserActive = false;
 
   removeUserActiveEventListeners();
+  console.log("\n\n\n\n");
 }
 
 export {
