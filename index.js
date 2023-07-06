@@ -79,46 +79,45 @@ function executeCheckpointTimers(checkPoints) {
 
     return function () {
       return setTimeout(() => {
-				handleTimerCallback();
+        console.log("timer callback", timerId, index, currentCheckPoint);
+        // check if user is active and add to store
+        if (isUserActive) {
+          console.log("user is active");
+          store.addToStore(currentProviderId, "time_on_page", 1);
+          isUserActive = false;
+        }
+
+        // check if it's not the last check point i.e. last check cycle
+        if (!isLastCheckPoint(index, checkPoints.length)) {
+          console.log("not the last check ponit");
+          setupEventListeners();
+          // call next timer function
+          timerId = timerCallback[index + 1]();
+        } else {
+          console.log("last check ponit");
+
+          // remove event listeners if it's the last check cycle
+          removeUserActiveEventListeners();
+          timerId = null;
+          isUserActive = false;
+        }
       }, currentCheckPoint - prevCheckPoint);
     };
   });
 
   // start the cycle
-  // timerCallback[0];
   return timerCallback[0]();
 }
 
-function setupEventListeners(){
-	console.log("adding event listeners");
+function setupEventListeners() {
+  console.log("adding event listeners");
   events.forEach((event) => {
     document.addEventListener(event, handleUserEvent);
   });
 }
 
-function handleTimerCallback () {
-	console.log("timer callback", timerId, index, currentCheckPoint);
-	// check if user is active and add to store
-	if (isUserActive) {
-		console.log("user is active");
-		store.addToStore(currentProviderId, "time_on_page", 1);
-		isUserActive = false;
-	}
-
-	// check if it's not the last check point i.e. last check cycle
-	if (index !== checkPoints.length - 1) {
-		console.log("not the last check ponit");
-		setupEventListeners();
-		// call next timer function
-		timerId = timerCallback[index + 1]();
-	} else {
-		console.log("last check ponit");
-
-		// remove event listeners if it's the last check cycle
-		removeUserActiveEventListeners();
-		timerId = null;
-		isUserActive = false;
-	}
+function isLastCheckPoint(index, length) {
+  return index === length - 1;
 }
 
 function stopTimer() {
