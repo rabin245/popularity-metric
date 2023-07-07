@@ -1,5 +1,5 @@
 import debounce from "lodash/debounce";
-import * as store from "./store";
+import store from "./store";
 import * as weightedAverage from "./weightedAverage";
 
 //Constants for tracking time on page
@@ -27,7 +27,7 @@ const trackEvent = (eventType, provider, count, delay = debounceDelay) => {
   if (!debounceByEventHandlers[eventType]) {
     debounceByEventHandlers[eventType] = debounce(
       (eventType, provider, count) => {
-        console.log("\n\nthis is a debounced function for event", eventType);
+        // console.log("\n\nthis is a debounced function for event", eventType);
         store.addToStore(provider, eventType, count);
       },
       delay

@@ -1,12 +1,4 @@
-export function addToStore(key, eventType, count) {
-  console.log(
-    "adding to store for key",
-    key,
-    "event type",
-    eventType,
-    "count",
-    count
-  );
+function addToStore(key, eventType, count) {
   // Get the stored data from localStorage
   let storedData = JSON.parse(localStorage.getItem("providersStore"));
 
@@ -28,7 +20,7 @@ export function addToStore(key, eventType, count) {
   localStorage.setItem("providersStore", JSON.stringify(storedData));
 }
 
-export function getValueFromStore(eventWeights) {
+function getValueFromStore(eventWeights) {
   // Get the stored data from localStorage
   const storedData = JSON.parse(localStorage.getItem("providersStore"));
 
@@ -47,3 +39,11 @@ export function getValueFromStore(eventWeights) {
 
   return storedData;
 }
+
+// const store = {
+export default {
+  addToStore,
+  getValueFromStore,
+};
+
+// export default store;
