@@ -153,7 +153,19 @@ function stopCheckingUserActivity() {
   console.log("\n\n\n\n");
 }
 
+const resetEventWeightsMap = () => {
+  for (const key in eventWeightsMap) {
+    delete eventWeightsMap[key];
+  }
+};
+
+const getEventWeightsMap = () => {
+  return { ...eventWeightsMap };
+};
+
 export {
+  resetEventWeightsMap,
+  getEventWeightsMap,
   trackEvent,
   registerEventsAndWeights,
   getStoreByPopularity,
