@@ -1,6 +1,14 @@
+function getStoredData() {
+  return JSON.parse(localStorage.getItem("providersStore")) || {};
+}
+
+function setStoredData(data) {
+  localStorage.setItem("providersStore", JSON.stringify(data));
+}
+
 function addToStore(key, eventType, count) {
   // Get the stored data from localStorage
-  let storedData = JSON.parse(localStorage.getItem("providersStore"));
+  const storedData = getStoredData();
 
   if (!storedData) {
     storedData = {};
@@ -17,14 +25,14 @@ function addToStore(key, eventType, count) {
   storedData[key][eventType] += count;
 
   // Save the updated data to localStorage
-  localStorage.setItem("providersStore", JSON.stringify(storedData));
+  setStoredData(storedData);
 }
 
-function getValueFromStore(eventWeights) {
+function getValueFromStore(eventWeightsMap) {
   // Get the stored data from localStorage
-  const storedData = JSON.parse(localStorage.getItem("providersStore"));
+  const storedData = getStoredData();
 
-  const eventTypes = Object.keys(eventWeights);
+  const eventTypes = Object.keys(eventWeightsMap);
 
   // Initialize missing event counts to 0
   if (storedData) {
@@ -40,10 +48,7 @@ function getValueFromStore(eventWeights) {
   return storedData;
 }
 
-// const store = {
 export default {
   addToStore,
   getValueFromStore,
 };
-
-// export default store;
