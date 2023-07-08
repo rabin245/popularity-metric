@@ -1,21 +1,20 @@
+import { jest } from "@jest/globals";
+import { trackEvent } from "../index";
+import store from "../store";
 import {
   registerEventsAndWeights,
-  resetEventWeightsMap,
-  getEventWeightsMap,
-  trackEvent,
-} from "../index";
-import store from "../store";
-import { jest } from "@jest/globals";
+  getMockEventWeightsMap,
+  resetMockEventWeightsMap,
+} from "../index.mock";
 
 // Test suite
 describe("registerEventsAndWeights", () => {
-  // Reset eventWeightsMap before each test case
   beforeEach(() => {
-    resetEventWeightsMap();
+    resetMockEventWeightsMap();
   });
 
   // Test case 1: Register single event and weight
-  it("should register a single event and weight", () => {
+  it("should register a single event and weight", async () => {
     const eventsAndWeights = [["eventType1", 0.5]];
 
     const expectedEventWeightsMap = {
@@ -24,8 +23,8 @@ describe("registerEventsAndWeights", () => {
 
     registerEventsAndWeights(eventsAndWeights);
 
-    const eventWeightsMap = getEventWeightsMap();
-    expect(eventWeightsMap).toEqual(expectedEventWeightsMap);
+    const mockedEventWeightsMap = getMockEventWeightsMap();
+    expect(mockedEventWeightsMap).toEqual(expectedEventWeightsMap);
   });
 
   // Test case 2: Register multiple events and weights
@@ -43,8 +42,8 @@ describe("registerEventsAndWeights", () => {
 
     registerEventsAndWeights(eventsAndWeights);
 
-    const eventWeightsMap = getEventWeightsMap();
-    expect(eventWeightsMap).toEqual(expectedEventWeightsMap);
+    const mockedEventWeightsMap = getMockEventWeightsMap();
+    expect(mockedEventWeightsMap).toEqual(expectedEventWeightsMap);
   });
 
   // Test case 3: Register events and weights with duplicate event types
@@ -61,8 +60,8 @@ describe("registerEventsAndWeights", () => {
 
     registerEventsAndWeights(eventsAndWeights);
 
-    const eventWeightsMap = getEventWeightsMap();
-    expect(eventWeightsMap).toEqual(expectedEventWeightsMap);
+    const mockedEventWeightsMap = getMockEventWeightsMap();
+    expect(mockedEventWeightsMap).toEqual(expectedEventWeightsMap);
   });
 });
 
@@ -71,7 +70,9 @@ describe("trackEvent", () => {
   let addToStoreMock;
 
   beforeEach(() => {
-    addToStoreMock = jest.spyOn(store, "addToStore").mockImplementation();
+    addToStoreMock = jest
+      .spyOn(store, "addToStore")
+      .mockImplementation((provider, eventType, count) => {});
   });
 
   afterEach(() => {
