@@ -1,4 +1,4 @@
-export function calculateWeightedAverage(eventCounts, eventWeights) {
+export function calculateWeightedMean(eventCounts, eventWeights) {
   //Convert object to array
   const arr = Object.entries(eventCounts);
 
@@ -8,8 +8,8 @@ export function calculateWeightedAverage(eventCounts, eventWeights) {
     0
   );
 
-  //Loop through array and calculate weightedAverage for each key
-  const weightedAverages = arr.map((value) => {
+  //Loop through array and calculate weightedMean for each key
+  const weightedMeans = arr.map((value) => {
     const [providerKey, weightObj] = value;
 
     const weightedSum = Object.entries(weightObj).reduce(
@@ -19,12 +19,12 @@ export function calculateWeightedAverage(eventCounts, eventWeights) {
       0
     );
 
-    const averageSum = weightedSum / totalWeight;
+    const weightedMean = weightedSum / totalWeight;
 
-    return [providerKey, averageSum];
+    return [providerKey, weightedMean];
   });
 
-  return weightedAverages;
+  return weightedMeans;
 }
 
 export function sortWeights(arr) {

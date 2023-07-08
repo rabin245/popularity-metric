@@ -1,6 +1,6 @@
 import debounce from "lodash/debounce";
 import store from "./store";
-import * as weightedAverage from "./weightedAverage";
+import * as weightedMean from "./weightedMean";
 
 //Constants for tracking time on page
 const debounceDelay = 5 * 1000; // 5 seconds
@@ -37,13 +37,13 @@ const trackEvent = (eventType, provider, count, delay = debounceDelay) => {
   debounceByEventHandlers[eventType](eventType, provider, count);
 };
 
-function getStoreByPopularity() {
+function calculatePopularityRanking() {
   const providerEventsData = store.getValueFromStore(eventWeightsMap);
-  const weightedArr = weightedAverage.calculateWeightedAverage(
+  const weightedArr = weightedMean.calculateWeightedMean(
     providerEventsData,
     eventWeightsMap
   );
-  const sortedWeightedArr = weightedAverage.sortWeights(weightedArr);
+  const sortedWeightedArr = weightedMean.sortWeights(weightedArr);
   return sortedWeightedArr;
 }
 
@@ -153,22 +153,10 @@ function stopCheckingUserActivity() {
   console.log("\n\n\n\n");
 }
 
-const resetEventWeightsMap = () => {
-  for (const key in eventWeightsMap) {
-    delete eventWeightsMap[key];
-  }
-};
-
-const getEventWeightsMap = () => {
-  return { ...eventWeightsMap };
-};
-
 export {
-  resetEventWeightsMap,
-  getEventWeightsMap,
   trackEvent,
   registerEventsAndWeights,
-  getStoreByPopularity,
+  calculatePopularityRanking,
   checkUserActivityBetweenCheckpoints,
   stopCheckingUserActivity,
 };

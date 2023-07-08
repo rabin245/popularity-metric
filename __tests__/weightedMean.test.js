@@ -1,6 +1,6 @@
-import { calculateWeightedAverage, sortWeights } from "../weightedAverage";
+import { calculateWeightedMean, sortWeights } from "../weightedMean";
 
-describe("calculate weighted average", () => {
+describe("calculate weighted means", () => {
   it("should calculate the weighted mean for each key", () => {
     const eventCounts = {
       provider1: {
@@ -42,7 +42,7 @@ describe("calculate weighted average", () => {
       share: 0.35,
     };
 
-    // const expectedWeightedAverage = [
+    // const expectedWeightedMean = [
     //   ["provider1", 15.75],
     //   ["provider2", 29],
     //   ["provider3", 1.3],
@@ -50,14 +50,14 @@ describe("calculate weighted average", () => {
     //   ["provider5", 45.45],
     // ];
 
-    const expectedWeightedAverages = calculateExpectedWeightedAverage(
+    const expectedWeightedMeans = calculateExpectedWeightedMean(
       eventCounts,
       eventWeights
     );
 
-    const weightedAverage = calculateWeightedAverage(eventCounts, eventWeights);
+    const weightedMeans = calculateWeightedMean(eventCounts, eventWeights);
 
-    expect(weightedAverage).toEqual(expectedWeightedAverages);
+    expect(weightedMeans).toEqual(expectedWeightedMeans);
   });
 
   it("should handle empty eventWeights object", () => {
@@ -67,14 +67,14 @@ describe("calculate weighted average", () => {
     };
     const eventWeights = {};
 
-    const expectedWeightedAverages = calculateExpectedWeightedAverage(
+    const expectedWeightedMeans = calculateExpectedWeightedMean(
       eventCounts,
       eventWeights
     );
 
-    const result = calculateWeightedAverage(eventCounts, eventWeights);
+    const result = calculateWeightedMean(eventCounts, eventWeights);
 
-    expect(result).toEqual(expectedWeightedAverages);
+    expect(result).toEqual(expectedWeightedMeans);
   });
 
   it("should handle zero total weight", () => {
@@ -87,17 +87,17 @@ describe("calculate weighted average", () => {
       eventType2: 0,
     };
 
-    const expectedWeightedAverages = calculateExpectedWeightedAverage(
+    const expectedWeightedMeans = calculateExpectedWeightedMean(
       eventCounts,
       eventWeights
     );
 
-    const result = calculateWeightedAverage(eventCounts, eventWeights);
+    const result = calculateWeightedMean(eventCounts, eventWeights);
 
-    expect(result).toEqual(expectedWeightedAverages);
+    expect(result).toEqual(expectedWeightedMeans);
   });
 
-  function calculateExpectedWeightedAverage(eventCounts, eventWeights) {
+  function calculateExpectedWeightedMean(eventCounts, eventWeights) {
     const totalWeight = Object.values(eventWeights).reduce(
       (acc, value) => acc + value,
       0
@@ -111,8 +111,8 @@ describe("calculate weighted average", () => {
         0
       );
 
-      const averageSum = weightedSum / totalWeight;
-      return [providerKey, averageSum];
+      const weightedMean = weightedSum / totalWeight;
+      return [providerKey, weightedMean];
     });
   }
 });

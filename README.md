@@ -71,19 +71,23 @@ checkUserActivityBetweenCheckpoints({
 stopCheckingUserActivity();
 ```
 
-### Getting Store by Popularity
+### Calculate the popularity ranking
 
-#### `getStoreByPopularity()`
+#### `calculatePopularityRanking()`
 
 Calculates the popularity of events based on their weights and returns the sorted result.
 
 ```javascript
-import { getStoreByPopularity } from "@zaxiya/popularity-metric";
+import { calculatePopularityRanking } from "@zaxiya/popularity-metric";
 
-// Get the store by popularity
-const storeByPopularity = getStoreByPopularity();
-console.log(storeByPopularity);
+// Calculate the popularity ranking
+const popularityRanking = calculatePopularityRanking();
+console.log(popularityRanking);
 ```
+
+This function calculates the popularity ranking of events stored in the providersStore. It uses the weights associated with each event type to calculate a weighted mean for each provider. The result is an array of provider-weight pairs, sorted in descending order of popularity.
+
+Note that you should ensure that the necessary event weights and data are registered and stored before calling this function.
 
 ## License
 
