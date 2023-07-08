@@ -1,7 +1,7 @@
-import { calculateWeightedAverage } from "../weightedAverage";
+import { calculateWeightedAverage, sortWeights } from "../weightedAverage";
 
 describe("calculate weighted average", () => {
-  it("should calculate the weighted mean of the provided data", () => {
+  it("should calculate the weighted mean for each key", () => {
     const eventCounts = {
       provider1: {
         time_on_page: 40,
@@ -71,5 +71,41 @@ describe("calculate weighted average", () => {
     const weightedAverage = calculateWeightedAverage(eventCounts, eventWeights);
 
     expect(weightedAverage).toEqual(expectedWeightedAverage);
+  });
+});
+
+describe("sortWeights", () => {
+  it("should sort the array of weights in descending order", () => {
+    const weights = [
+      ["provider1", 15.75],
+      ["provider2", 29],
+      ["provider3", 1.3],
+      ["provider4", 11.3],
+      ["provider5", 45.45],
+    ];
+    const sortedWeights = sortWeights(weights);
+
+    const expectedSortedWeights = [
+      ["provider5", 45.45],
+      ["provider2", 29],
+      ["provider1", 15.75],
+      ["provider4", 11.3],
+      ["provider3", 1.3],
+    ];
+    expect(sortedWeights).toEqual(expectedSortedWeights);
+  });
+
+  it("should return the same array if it contains only one element", () => {
+    const weights = [["provider1", 15.75]];
+    const sortedWeights = sortWeights(weights);
+
+    expect(sortedWeights).toEqual(weights);
+  });
+
+  it("should return an empty array if the input array is empty", () => {
+    const weights = [];
+    const sortedWeights = sortWeights(weights);
+
+    expect(sortedWeights).toEqual([]);
   });
 });
