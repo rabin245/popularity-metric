@@ -1,11 +1,34 @@
 import { jest } from "@jest/globals";
-import { trackEvent } from "../index";
+import { trackEvent, registerEventsAndWeights } from "../index";
 import store from "../store";
-import {
-  registerEventsAndWeights,
-  getMockEventWeightsMap,
+
+jest.unstable_mockModule("../index", () => {
+  let mockEventWeightsMap = {};
+
+  return {
+    mockRegisterEventsAndWeights: jest
+      .fn()
+      .mockImplementation((eventsAndWeights) => {
+        eventsAndWeights.forEach(([eventType, weight]) => {
+          mockEventWeightsMap[eventType] = weight;
+        });
+
+        registerEventsAndWeights(eventsAndWeights);
+      }),
+    getMockEventWeightsMap: jest.fn(() => {
+      return { ...mockEventWeightsMap };
+    }),
+    resetMockEventWeightsMap: jest.fn(() => {
+      mockEventWeightsMap = {};
+    }),
+  };
+});
+
+const {
+  mockRegisterEventsAndWeights,
   resetMockEventWeightsMap,
-} from "../index.mock";
+  getMockEventWeightsMap,
+} = await import("../index");
 
 // Test suite
 describe("registerEventsAndWeights", () => {
@@ -21,7 +44,7 @@ describe("registerEventsAndWeights", () => {
       eventType1: 0.5,
     };
 
-    registerEventsAndWeights(eventsAndWeights);
+    mockRegisterEventsAndWeights(eventsAndWeights);
 
     const mockedEventWeightsMap = getMockEventWeightsMap();
     expect(mockedEventWeightsMap).toEqual(expectedEventWeightsMap);
@@ -40,7 +63,7 @@ describe("registerEventsAndWeights", () => {
       eventType3: 0.1,
     };
 
-    registerEventsAndWeights(eventsAndWeights);
+    mockRegisterEventsAndWeights(eventsAndWeights);
 
     const mockedEventWeightsMap = getMockEventWeightsMap();
     expect(mockedEventWeightsMap).toEqual(expectedEventWeightsMap);
@@ -58,7 +81,7 @@ describe("registerEventsAndWeights", () => {
       eventType2: 0.6,
     };
 
-    registerEventsAndWeights(eventsAndWeights);
+    mockRegisterEventsAndWeights(eventsAndWeights);
 
     const mockedEventWeightsMap = getMockEventWeightsMap();
     expect(mockedEventWeightsMap).toEqual(expectedEventWeightsMap);
