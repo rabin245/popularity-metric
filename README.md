@@ -75,7 +75,7 @@ stopCheckingUserActivity();
 
 #### `calculatePopularityRanking()`
 
-Calculates the popularity of events based on their weights and returns the sorted result.
+Calculates the popularity of providers based on the weights of each event and returns the sorted result.
 
 ```javascript
 import { calculatePopularityRanking } from "@zaxiya/popularity-metric";
